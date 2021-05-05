@@ -8,6 +8,9 @@ import CheckMarkIcon from "../public/statics/svg/check_mark.svg";
 
 import { TodoType } from "../typescript/todo";
 import { checkTodoAPI, deleteTodoAPI } from "../lib/api/todo";
+import { useSelector } from "../store";
+import { useDispatch } from "react-redux";
+import { todoActions } from "../store/todo";
 
 const Container = styled.div`
   width: 100%;
@@ -139,9 +142,9 @@ interface Props {
   todos: TodoType[];
 }
 
-const TodoList: FC<Props> = ({ todos }) => {
-  const router = useRouter();
-  const [localTodos, setLocalTodos] = useState(todos);
+const TodoList: FC<Props> = () => {
+  const dispatch = useDispatch();
+  const todos = useSelector((state) => state.todo.todos);
 
   // const getTodoColorNums = useCallback(() => {
   //   let red = 0;
@@ -191,7 +194,7 @@ const TodoList: FC<Props> = ({ todos }) => {
   const todoColorNums2 = useMemo(() => {
     const colors: { [key: string]: number | undefined } = {};
 
-    localTodos.forEach((todo) => {
+    todos.forEach((todo) => {
       const value = colors[todo.color];
 
       if (!value) {
@@ -205,18 +208,18 @@ const TodoList: FC<Props> = ({ todos }) => {
   }, [todos]);
 
   const checkTodo = async (id: number) => {
+    console.log();
     try {
       await checkTodoAPI(id);
       console.log("체크하였습니다.");
       // router.reload();
       // router.push("/");
 
-      const newTodos = localTodos.map((todo) => {
+      const newTodos = todos.map((todo) => {
         if (todo.id === id) return { ...todo, checked: !todo.checked };
         return todo;
       });
-
-      setLocalTodos(newTodos);
+      dispatch(todoActions.setTodo(newTodos));
     } catch (e) {
       console.log(e);
     }
@@ -225,8 +228,8 @@ const TodoList: FC<Props> = ({ todos }) => {
   const deleteTodo = async (id: number) => {
     try {
       await deleteTodoAPI(id);
-      const newTodos = localTodos.filter((todo) => todo.id !== id);
-      setLocalTodos(newTodos);
+      const newTodos = todos.filter((todo) => todo.id !== id);
+      dispatch(todoActions.setTodo(newTodos));
       console.log("삭제했습니다.");
     } catch (e) {
       console.log(e);
@@ -250,7 +253,7 @@ const TodoList: FC<Props> = ({ todos }) => {
           </div>
         </div>
         <ul className="todo-list">
-          {localTodos.map((todo) => (
+          {todos.map((todo) => (
             <li className="todo-item" key={todo.id}>
               <div className="todo-left-side">
                 <div className={`todo-color-block bg-${todo.color}`} />
@@ -267,7 +270,9 @@ const TodoList: FC<Props> = ({ todos }) => {
                   <>
                     <TrashCanIcon
                       className="todo-trash-can"
-                      onClick={deleteTodo}
+                      onClick={() => {
+                        deleteTodo(todo.id);
+                      }}
                     />
                     <CheckMarkIcon
                       className="todo-trash-can"
